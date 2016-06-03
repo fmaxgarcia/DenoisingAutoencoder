@@ -27,14 +27,15 @@ class DenoisingAutoencoder():
         self.y = lasagne.layers.get_output(self.hidden_layer, {self.input_layer : inputs} )
         self.z = lasagne.layers.get_output(self.output_layer, {self.input_layer : inputs})
  
-        L = - T.sum(inputs * T.log(self.z) + (1 - inputs) * T.log(1 - self.z), axis=1)
-        error = T.mean(L)
+        # L = - T.sum(inputs * T.log(self.z) + (1 - inputs) * T.log(1 - self.z), axis=1)
+        error = T.mean( (inputs - self.z)**2 ) 
 
         givens = { inputs: self.inputs_shared }
 
         updates = lasagne.updates.nesterov_momentum(error, self.all_parameters, self.learning_rate)
         self._train = theano.function([], [error], updates=updates, givens=givens) 
         self._get_hidden_output = theano.function([], [self.y], givens=givens)
+        self._get_reconstruction = theano.function([], [self.z], givens=givens)
 
 
     def _get_corrupted_input(self, inputs, corruption_level):
@@ -55,3 +56,7 @@ class DenoisingAutoencoder():
     def get_hidden_outputs(self, inputs):
         self.inputs_shared.set_value( inputs )
         return self._get_hidden_output()[0]
+
+    def get_reconstruction(self, inputs):
+        self.inputs_shared.set_value( inputs )
+        return self._get_reconstruction()[0]

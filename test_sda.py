@@ -63,6 +63,8 @@ if __name__ == '__main__':
                 correct += 1
             total += 1
 
+    print "Correct: ", correct
+    print "Total: ", total
     print "Accuracy: ", (correct / total)
 
 
