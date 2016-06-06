@@ -1,7 +1,7 @@
 from DenoisingAutoencoder import DenoisingAutoencoder
 import theano
 import numpy as np
-from load_data import load_data
+from load_mnist import load_data
 from utils import tile_raster_images
 from PIL import Image
 

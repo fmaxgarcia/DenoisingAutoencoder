@@ -1,7 +1,7 @@
 from StackedDenoisingAutoencoder import StackedDenoisingAutoencoder
 import theano
 import numpy as np
-from load_data import load_data
+from load_mnist import load_data
 
 CORRUPTION_LEVEL = 0.3
 LEARNING_RATE = 0.1
