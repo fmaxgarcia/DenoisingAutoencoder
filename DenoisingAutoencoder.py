@@ -54,6 +54,7 @@ class DenoisingAutoencoder():
         return error
 
     def get_hidden_outputs(self, inputs):
+        inputs = np.asarray(inputs, dtype=theano.config.floatX)
         self.inputs_shared.set_value( inputs )
         return self._get_hidden_output()[0]
 
