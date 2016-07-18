@@ -5,15 +5,15 @@ sys.path.append("../GrassmanianDomainAdaptation/")
 
 from GrassmanianSampling import flow
 
-grassmannian_sampling = False
+grassmannian_sampling = True
 from sklearn.decomposition import PCA
 
 
 import matplotlib.pyplot as plt
 
-CORRUPTION_LEVEL = 0.3
+CORRUPTION_LEVEL = 0.4
 LEARNING_RATE = 0.0001
-TRAINING_EPOCHS = 100
+TRAINING_EPOCHS = 1000
 BATCH_SIZE = 32
 DATASET = "../Datasets/Mars/tablet/"
 
@@ -66,8 +66,8 @@ if __name__ == '__main__':
     n_train_batches = train_x.shape[0] / BATCH_SIZE
     n_test_batches = test_x.shape[0] / BATCH_SIZE
     print "Training autoencoder..."
-    sda = StackedDenoisingAutoencoder(n_input=pre_train.shape[1], n_hidden_list=[600, 400], batch_size=BATCH_SIZE)
-    sda.pre_train(pre_train, epochs=20, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.GAUSSIAN)
+    sda = StackedDenoisingAutoencoder(n_input=pre_train.shape[1], n_hidden_list=[400, 200], batch_size=BATCH_SIZE)
+    sda.pre_train(pre_train, epochs=200, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.GAUSSIAN)
     num_outputs = train_y.shape[1]
     sda.build_network(num_inputs=dimensions, num_outputs=num_outputs, output_dim=num_outputs, learning_rate=LEARNING_RATE, batch_size=BATCH_SIZE)
 
@@ -82,8 +82,20 @@ if __name__ == '__main__':
                 c.append( sda.train(train_minibatch, labels_minibatch) )
         print "Training epoch %d: %f" %(i, np.mean(c))
 
-    
-    # xs = np.linspace(0, test_y.shape[0]-1, num=test_y.shape[0])
-    # for i in range(test_y.shape[1]):
-    #     plt.plot(xs, test_y[:,i], "r", xs, predictions[:,i], "b")
-    #     plt.show()
+    predictions = None
+    for batch_index in range(n_train_batches):
+        test_minibatch = test_x[batch_index * BATCH_SIZE: (batch_index + 1) * BATCH_SIZE]
+        
+        if test_minibatch.shape[0] == BATCH_SIZE:
+            if predictions == None:
+                predictions = sda.get_output(test_minibatch)
+            else:
+                predictions = np.vstack( (predictions, sda.get_output(test_minibatch)))
+
+    test_y = test_y[:predictions.shape[0]]
+    print "Transfer MSE ", np.mean( (test_y-predictions)**2 )
+            
+    xs = np.linspace(0, test_y.shape[0]-1, num=test_y.shape[0])
+    for i in range(test_y.shape[1]):
+        plt.plot(xs, test_y[:,i], "r", xs, predictions[:,i], "b")
+        plt.show()

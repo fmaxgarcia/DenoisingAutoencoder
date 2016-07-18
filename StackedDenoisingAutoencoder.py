@@ -59,7 +59,7 @@ class StackedDenoisingAutoencoder:
         self.out = lasagne.layers.get_output(self.output_layer, {self.input_layer : inputs} )
 
         # neg_log_like = -T.mean(T.log(self.out)[T.arange(labels.shape[0]), labels])    
-        mean_error = T.mean(T.sum( (self.out - labels)**2, axis=0) )
+        mean_error = T.mean((self.out - labels)**2)
 
         givens = { inputs : self.inputs_shared, labels : self.labels_shared }
         updates = lasagne.updates.sgd(mean_error, self.all_parameters, self.learning_rate)
@@ -80,7 +80,7 @@ class StackedDenoisingAutoencoder:
     def get_output(self, inputs):
         inputs = np.asarray(inputs, dtype=theano.config.floatX)
         self.inputs_shared.set_value( inputs )
-        return self._get_output()
+        return self._get_output()[0]
         
 
 
