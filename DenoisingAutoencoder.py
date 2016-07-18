@@ -5,6 +5,10 @@ from theano.tensor.shared_randomstreams import RandomStreams
 
 import lasagne
 
+class CorruptionType():
+    BINOMIAL = 0
+    GAUSSIAN = 1
+
 class DenoisingAutoencoder():
 
     def __init__(self, n_visible=784, n_hidden=500, learning_rate=0.1, batch_size=1):
@@ -16,7 +20,7 @@ class DenoisingAutoencoder():
         self.hidden_layer = lasagne.layers.DenseLayer(self.input_layer, num_units=n_hidden, 
                             nonlinearity=lasagne.nonlinearities.sigmoid, W=lasagne.init.Uniform(), b=lasagne.init.Uniform())
         self.output_layer = lasagne.layers.DenseLayer(self.hidden_layer, num_units=n_visible,
-                            nonlinearity=lasagne.nonlinearities.sigmoid, W=lasagne.init.Uniform(), b=lasagne.init.Uniform())
+                            nonlinearity=None, W=lasagne.init.Uniform(), b=lasagne.init.Uniform())
 
 
         self.all_parameters = lasagne.layers.helper.get_all_params(self.output_layer)
@@ -38,17 +42,22 @@ class DenoisingAutoencoder():
         self._get_reconstruction = theano.function([], [self.z], givens=givens)
 
 
-    def _get_corrupted_input(self, inputs, corruption_level):
+    def _get_corrupted_input(self, inputs, corruption_level, corruption_type):
         """binomial will produce an array of 0s and 1s where 1 has a
                 probability of 1 - ``corruption_level`` and 0 with
                 ``corruption_level``
         """
-        return np.asarray(np.random.binomial(size=inputs.shape, n=1,
-                    p=1 - corruption_level) * inputs, dtype=theano.config.floatX)
+        if corruption_type == CorruptionType.BINOMIAL:
+            binomials = np.random.binomial(size=inputs.shape, n=1, p=1 - corruption_level)
+            return np.asarray(binomials * inputs, dtype=theano.config.floatX)
+        elif corruption_type == CorruptionType.GAUSSIAN:
+            binomials = np.random.binomial(size=inputs.shape, n=1, p=corruption_level)
+            return np.asarray((binomials * np.random.normal(loc=0.0, scale=10.0, size=inputs.shape)) + inputs,
+                    dtype=theano.config.floatX)
 
 
-    def train(self, inputs, corruption_level=0.0):
-        corrupted_input = self._get_corrupted_input(inputs, corruption_level)
+    def train(self, inputs, corruption_level=0.0, corruption_type=CorruptionType.BINOMIAL):
+        corrupted_input = self._get_corrupted_input(inputs, corruption_level, corruption_type)
         self.inputs_shared.set_value( corrupted_input )
         error = self._train()
         return error
