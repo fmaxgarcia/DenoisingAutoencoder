@@ -5,7 +5,7 @@ sys.path.append("../GrassmanianDomainAdaptation/")
 
 from GrassmanianSampling import flow
 
-grassmannian_sampling = True
+grassmannian_sampling = False
 from sklearn.decomposition import PCA
 
 

@@ -11,7 +11,7 @@ class CorruptionType():
 
 class DenoisingAutoencoder():
 
-    def __init__(self, n_visible=784, n_hidden=500, learning_rate=0.1, batch_size=1):
+    def __init__(self, n_visible=784, n_hidden=500, learning_rate=0.1, batch_size=1, output_nonlinearity=None):
         
         self.learning_rate = learning_rate
         rng = np.random.RandomState(123)
@@ -20,7 +20,7 @@ class DenoisingAutoencoder():
         self.hidden_layer = lasagne.layers.DenseLayer(self.input_layer, num_units=n_hidden, 
                             nonlinearity=lasagne.nonlinearities.sigmoid, W=lasagne.init.Uniform(), b=lasagne.init.Uniform())
         self.output_layer = lasagne.layers.DenseLayer(self.hidden_layer, num_units=n_visible,
-                            nonlinearity=None, W=lasagne.init.Uniform(), b=lasagne.init.Uniform())
+                            nonlinearity=output_nonlinearity, W=lasagne.init.Uniform(), b=lasagne.init.Uniform())
 
 
         self.all_parameters = lasagne.layers.helper.get_all_params(self.output_layer)
