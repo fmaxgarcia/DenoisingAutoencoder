@@ -58,7 +58,7 @@ if __name__ == '__main__':
         print "Denoising subspace #%d" %(i)
         proj_s = input1.dot( subspace.dot(subspace.T) )
         proj_t = input2.dot( subspace.dot(subspace.T) )
-        sda =  StackedDenoisingAutoencoder(n_input=proj_s.shape[1], n_hidden_list=[400, 200], batch_size=BATCH_SIZE)
+        sda =  StackedDenoisingAutoencoder(n_input=proj_s.shape[1], n_hidden_list=[500, 300], batch_size=BATCH_SIZE)
         pre_train = np.vstack( (proj_s, proj_t) )
         sda.pre_train(train_set_x=pre_train, epochs=10, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.GAUSSIAN)
         
