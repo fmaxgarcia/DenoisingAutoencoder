@@ -52,7 +52,7 @@ class DenoisingAutoencoder():
             return np.asarray(binomials * inputs, dtype=theano.config.floatX)
         elif corruption_type == CorruptionType.GAUSSIAN:
             binomials = np.random.binomial(size=inputs.shape, n=1, p=corruption_level)
-            return np.asarray((binomials * np.random.normal(loc=0.0, scale=10.0, size=inputs.shape)) + inputs,
+            return np.asarray((binomials * np.random.normal(loc=0.0, scale=15.0, size=inputs.shape)) + inputs,
                     dtype=theano.config.floatX)
 
 

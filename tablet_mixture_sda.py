@@ -39,6 +39,9 @@ def create_projected_data(proj_x, batch_size, sda):
                 reconstruction_data = reconstruction
             else:
                 reconstruction_data = np.vstack( (reconstruction_data, reconstruction) )
+
+    reconstruction_data = np.hstack( (reconstruction_data, np.ones((reconstruction_data.shape[0], 1))) )
+
     return reconstruction_data
 
 
@@ -56,11 +59,12 @@ if __name__ == '__main__':
     proj_train, proj_test = [], []
     for i, subspace in enumerate(grassmanian_subspaces):
         print "Denoising subspace #%d" %(i)
-        proj_s = input1.dot( subspace.dot(subspace.T) )
-        proj_t = input2.dot( subspace.dot(subspace.T) )
+        proj_s = norm_input1.dot( subspace.dot(subspace.T) )
+        proj_t = norm_input2.dot( subspace.dot(subspace.T) )
+
         sda =  StackedDenoisingAutoencoder(n_input=proj_s.shape[1], n_hidden_list=[500, 300], batch_size=BATCH_SIZE)
         pre_train = np.vstack( (proj_s, proj_t) )
-        sda.pre_train(train_set_x=pre_train, epochs=10, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.GAUSSIAN)
+        sda.pre_train(train_set_x=pre_train, epochs=1, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.GAUSSIAN)
         
         sda.build_network(num_inputs=pre_train.shape[1], num_outputs=1, output_dim=1, learning_rate=LEARNING_RATE, batch_size=BATCH_SIZE, task_type=TaskType.REGRESSION)
 
@@ -71,16 +75,19 @@ if __name__ == '__main__':
         proj_test.append( reconstruction_test )
         
     print "Creating mixture of subspaces..."
-    mixture_of_subspaces = MixtureOfSubspaces(num_subspaces=len(proj_train), proj_dimension=proj_train[0].shape[1], original_dimensions=norm_input1.shape[1])
+    norm_input1 = np.hstack( (norm_input1, np.ones( (norm_input1.shape[0], 1) ) ))
+    norm_input2 = np.hstack( (norm_input2, np.ones( (norm_input2.shape[0], 1) ) ))
+    mixture_of_subspaces = MixtureOfSubspaces(num_subspaces=len(proj_train), proj_dimension=proj_train[0].shape[1], num_outputs=outputs.shape[1], original_dimensions=norm_input1.shape[1])
 
     num_train_samples = proj_train[0].shape[0]
-    mixture_of_subspaces.train_mixture(X=norm_input1[:num_train_samples], Y=outputs[:num_train_samples,2], X_proj=proj_train)
+    mixture_of_subspaces.train_mixture(X=norm_input1[:num_train_samples], Y=outputs[:num_train_samples], X_proj=proj_train)
 
     num_test_samples = proj_test[0].shape[0]
     predictions = mixture_of_subspaces.make_prediction(norm_input2[:num_test_samples], proj_test)
-    print "Prediction MSE ", np.mean((outputs[:num_test_samples,2] - predictions)**2)
+    print "Prediction MSE ", np.mean((outputs[:num_test_samples] - predictions)**2)
     
             
-    xs = np.linspace(0, outputs.shape[0]-1, num=outputs.shape[0])
-    plt.plot(xs, outputs[:,2], "r", xs, predictions, "b")
-    plt.show()
+    xs = np.linspace(0, predictions.shape[0]-1, num=predictions.shape[0])
+    for i in range(outputs.shape[1]):
+        plt.plot(xs, outputs[:num_test_samples,i], "r", xs, predictions[:num_test_samples,i], "b")
+        plt.show()

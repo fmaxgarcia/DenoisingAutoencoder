@@ -1,4 +1,4 @@
-from StackedDenoisingAutoencoder import StackedDenoisingAutoencoder
+from StackedDenoisingAutoencoder import *
 import theano
 import numpy as np
 from load_amazon import load_data
@@ -6,13 +6,16 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 import sys
 sys.path.append("../GrassmanianDomainAdaptation/")
+sys.path.append("../MixtureOfSubspaces/")
 from sklearn.decomposition import PCA
 
 from GrassmanianSampling import flow
+from MixtureOfSubspaces import MixtureOfSubspaces
+
 
 CORRUPTION_LEVEL = 0.3
 LEARNING_RATE = 0.1
-TRAINING_EPOCHS = 100
+TRAINING_EPOCHS = 10
 BATCH_SIZE = 20
 DATASET = '../Datasets/amazon reviews/'
 
@@ -69,6 +72,7 @@ if __name__ == '__main__':
     dimensions = 1000
     grassmanian_subspaces = flow(original_train_x, original_test_x, t=np.array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0]), k=dimensions, dim_reduction="PCA")
 
+    num_outputs = np.unique(original_train_y).shape[0]
     proj_train, proj_test = [], []
     for i, subspace in enumerate(grassmanian_subspaces):
         print "Denoising subspace #%d" %(i)
@@ -76,10 +80,9 @@ if __name__ == '__main__':
         proj_t = original_test_x.dot( subspace.dot(subspace.T) )
         sda =  StackedDenoisingAutoencoder(n_input=proj_s.shape[1], n_hidden_list=[700, 500], batch_size=BATCH_SIZE)
         pre_train = np.vstack( (proj_s, proj_t) )
-        sda.pre_train(train_set_x=pre_train, epochs=10, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.BINOMIAL)
+        sda.pre_train(train_set_x=pre_train, epochs=1, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.BINOMIAL)
         
-        num_outputs = np.unique(original_train_y).shape[0]
-        sda.build_network(num_inputs=pre_train.shape[1], num_outputs=1, learning_rate=LEARNING_RATE, batch_size=BATCH_SIZE, task_type=TaskType.CLASSIFICATION, label_type='int32')
+        sda.build_network(num_inputs=pre_train.shape[1], num_outputs=num_outputs, output_dim=1, learning_rate=LEARNING_RATE, batch_size=BATCH_SIZE, task_type=TaskType.CLASSIFICATION, label_type='int32')
 
         reconstruction_train = create_projected_data(proj_s, BATCH_SIZE, sda)
         reconstruction_test = create_projected_data(proj_t, BATCH_SIZE, sda)
@@ -88,7 +91,8 @@ if __name__ == '__main__':
         proj_test.append( reconstruction_test )
 
     print "Creating mixture of subspaces..."
-    mixture_of_subspaces = MixtureOfSubspaces(num_subspaces=len(proj_train), proj_dimension=proj_train[0].shape[1], original_dimensions=original_train_x.shape[1])
+    mixture_of_subspaces = MixtureOfSubspaces(num_subspaces=len(proj_train), proj_dimension=proj_train[0].shape[1], num_outputs=num_outputs,
+                                              original_dimensions=original_train_x.shape[1], task_type=TaskType.CLASSIFICATION)
 
     num_train_samples = proj_train[0].shape[0]
     mixture_of_subspaces.train_mixture(X=original_train_x[:num_train_samples], Y=original_train_y[:num_train_samples], X_proj=proj_train)
@@ -107,7 +111,7 @@ if __name__ == '__main__':
     print "Total: ", total
     print "Accuracy: ", (correct / total)
 
-    with open("Results_G.txt", "a") as myfile:
+    with open("Results_G_M.txt", "a") as myfile:
         accuracy = correct / total
         myfile.write("%s -> %s\nAccuracy: %f \n" %(str(sys.argv[1]), str(sys.argv[2]), accuracy))
 
