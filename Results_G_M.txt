@@ -1,0 +1,10 @@
+dvd -> books
+Accuracy: 0.501515 
+dvd -> books
+Accuracy: 0.498990 
+books -> dvd
+Accuracy: 0.500510 
+dvd -> books
+Accuracy: 0.460000 
+dvd -> books
+Accuracy: 0.499495 

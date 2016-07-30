@@ -41,6 +41,7 @@ def create_projected_data(proj_x, batch_size, sda):
 
 if __name__ == '__main__':
 
+    # vectorizer = CountVectorizer(analyzer = "word", tokenizer = None, preprocessor = None, stop_words = None, max_features = 5000)
     vectorizer = CountVectorizer(min_df=2)
     # domains = ["books", "kitchen_&_housewares", "electronics", "dvd"]
     domains = [str(sys.argv[1]), str(sys.argv[2])] #"books", "dvd", "kitchen_&_housewares", "electronics", "dvd"] 
@@ -55,7 +56,7 @@ if __name__ == '__main__':
         ratings = np.asarray(ratings)[indices]
         all_ratings.extend( list(ratings) )
         all_text.extend( list(corpus) )
-        if domain != "dvd":
+        if domain != str(sys.argv[2]):
             num_samples += len(indices) 
 
 
@@ -67,6 +68,12 @@ if __name__ == '__main__':
 
     original_test_x = np.asarray(X[num_samples:,:])
     original_test_y = np.asarray(all_ratings)[num_samples:]
+
+    # original_train_x = np.asarray(X[:100,:])
+    # original_train_y = np.asarray(all_ratings)[:100]
+    #
+    # original_test_x = np.asarray(X[100:200,:])
+    # original_test_y = np.asarray(all_ratings)[100:200]
 
 
     dimensions = 1000
@@ -80,7 +87,7 @@ if __name__ == '__main__':
         proj_t = original_test_x.dot( subspace.dot(subspace.T) )
         sda =  StackedDenoisingAutoencoder(n_input=proj_s.shape[1], n_hidden_list=[700, 500], batch_size=BATCH_SIZE)
         pre_train = np.vstack( (proj_s, proj_t) )
-        sda.pre_train(train_set_x=pre_train, epochs=1, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.BINOMIAL)
+        sda.pre_train(train_set_x=pre_train, epochs=20, batch_size=BATCH_SIZE, corruption_level=CORRUPTION_LEVEL, corruption_type=CorruptionType.BINOMIAL)
         
         sda.build_network(num_inputs=pre_train.shape[1], num_outputs=num_outputs, output_dim=1, learning_rate=LEARNING_RATE, batch_size=BATCH_SIZE, task_type=TaskType.CLASSIFICATION, label_type='int32')
 
@@ -103,7 +110,7 @@ if __name__ == '__main__':
     correct = 0.0
     total = 0.0
     for i in range(predictions.shape[0]):
-        if predictions[i] == original_test_y[i]:
+        if np.argmax(predictions[i]) == original_test_y[i]:
             correct += 1
         total += 1
 
