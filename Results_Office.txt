@@ -1,0 +1,6 @@
+amazon -> webcam
+Accuracy: 0.045573 
+amazon -> webcam
+Accuracy: 0.035156 
+amazon -> webcam
+Accuracy: 0.041667 
